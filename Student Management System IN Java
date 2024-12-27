@@ -1,0 +1,350 @@
+import java.io.*;
+import java.util.*;
+
+class Student {
+    private String id;
+    private String name;
+    private int age;
+    private double grade;
+
+    public Student(String id, String name, int age, double grade) {
+        this.id = id;
+        this.name = name;
+        this.age = age;
+        this.grade = grade;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public int getAge() {
+        return age;
+    }
+
+    public double getGrade() {
+        return grade;
+    }
+
+    public void setGrade(double grade) {
+        this.grade = grade;
+    }
+
+    @Override
+    public String toString() {
+        return "ID: " + id + ", Name: " + name + ", Age: " + age + ", Grade: " + grade;
+    }
+}
+
+class Course {
+    private String courseName;
+    private List<Student> students;
+
+    public Course(String courseName) {
+        this.courseName = courseName;
+        this.students = new ArrayList<>();
+    }
+
+    public String getCourseName() {
+        return courseName;
+    }
+
+    public void enrollStudent(Student student) {
+        students.add(student);
+    }
+
+    public void removeStudent(String studentId) {
+        students.removeIf(student -> student.getId().equals(studentId));
+    }
+
+    public List<Student> getStudents() {
+        return students;
+    }
+
+    public void listStudents() {
+        if (students.isEmpty()) {
+            System.out.println("No students enrolled in this course.");
+        } else {
+            for (Student student : students) {
+                System.out.println(student);
+            }
+        }
+    }
+}
+
+class StudentManager {
+    private List<Student> students;
+    private Map<String, Course> courses;
+    private static final String STUDENT_FILE_PATH = "students.txt";
+    private static final String COURSE_FILE_PATH = "courses.txt";
+
+    public StudentManager() {
+        students = new ArrayList<>();
+        courses = new HashMap<>();
+    }
+
+    public void addStudent(Student student) {
+        students.add(student);
+    }
+
+    public void removeStudent(String studentId) {
+        students.removeIf(student -> student.getId().equals(studentId));
+    }
+
+    public Student getStudentById(String studentId) {
+        for (Student student : students) {
+            if (student.getId().equals(studentId)) {
+                return student;
+            }
+        }
+        return null;
+    }
+
+    public void listStudents() {
+        if (students.isEmpty()) {
+            System.out.println("No students available.");
+        } else {
+            for (Student student : students) {
+                System.out.println(student);
+            }
+        }
+    }
+
+    public void updateGrade(String studentId, double grade) {
+        Student student = getStudentById(studentId);
+        if (student != null) {
+            student.setGrade(grade);
+            System.out.println("Grade updated for student: " + student.getName());
+        } else {
+            System.out.println("Student not found.");
+        }
+    }
+
+    public void sortStudentsByGrade() {
+        students.sort(Comparator.comparingDouble(Student::getGrade).reversed());
+    }
+
+    public void filterStudentsByAge(int minAge, int maxAge) {
+        for (Student student : students) {
+            if (student.getAge() >= minAge && student.getAge() <= maxAge) {
+                System.out.println(student);
+            }
+        }
+    }
+
+    public void createCourse(String courseName) {
+        if (!courses.containsKey(courseName)) {
+            courses.put(courseName, new Course(courseName));
+            System.out.println("Course created: " + courseName);
+        } else {
+            System.out.println("Course already exists.");
+        }
+    }
+
+    public void enrollStudentInCourse(String courseName, String studentId) {
+        Course course = courses.get(courseName);
+        Student student = getStudentById(studentId);
+        if (course != null && student != null) {
+            course.enrollStudent(student);
+            System.out.println("Student " + student.getName() + " enrolled in " + courseName);
+        } else {
+            System.out.println("Course or Student not found.");
+        }
+    }
+
+    public void listCourseStudents(String courseName) {
+        Course course = courses.get(courseName);
+        if (course != null) {
+            System.out.println("Students enrolled in " + courseName + ":");
+            course.listStudents();
+        } else {
+            System.out.println("Course not found.");
+        }
+    }
+
+    public void saveStudentData() {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(STUDENT_FILE_PATH))) {
+            for (Student student : students) {
+                writer.write(student.getId() + "," + student.getName() + "," + student.getAge() + "," + student.getGrade());
+                writer.newLine();
+            }
+            System.out.println("Student data saved.");
+        } catch (IOException e) {
+            System.out.println("Error saving student data: " + e.getMessage());
+        }
+    }
+
+    public void loadStudentData() {
+        try (BufferedReader reader = new BufferedReader(new FileReader(STUDENT_FILE_PATH))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] data = line.split(",");
+                String id = data[0];
+                String name = data[1];
+                int age = Integer.parseInt(data[2]);
+                double grade = Double.parseDouble(data[3]);
+                students.add(new Student(id, name, age, grade));
+            }
+            System.out.println("Student data loaded.");
+        } catch (IOException e) {
+            System.out.println("Error loading student data: " + e.getMessage());
+        }
+    }
+
+    public void saveCourseData() {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(COURSE_FILE_PATH))) {
+            for (Course course : courses.values()) {
+                writer.write(course.getCourseName());
+                writer.newLine();
+            }
+            System.out.println("Course data saved.");
+        } catch (IOException e) {
+            System.out.println("Error saving course data: " + e.getMessage());
+        }
+    }
+
+    public void loadCourseData() {
+        try (BufferedReader reader = new BufferedReader(new FileReader(COURSE_FILE_PATH))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                createCourse(line);
+            }
+            System.out.println("Course data loaded.");
+        } catch (IOException e) {
+            System.out.println("Error loading course data: " + e.getMessage());
+        }
+    }
+}
+
+public class StudentManagementSystem {
+    private static StudentManager studentManager;
+
+    public static void main(String[] args) {
+        studentManager = new StudentManager();
+        Scanner scanner = new Scanner(System.in);
+
+        studentManager.loadStudentData();
+        studentManager.loadCourseData();
+
+        int choice;
+        do {
+            System.out.println("\nStudent Management System");
+            System.out.println("1. Add Student");
+            System.out.println("2. Remove Student");
+            System.out.println("3. List Students");
+            System.out.println("4. Update Student Grade");
+            System.out.println("5. Sort Students by Grade");
+            System.out.println("6. Filter Students by Age");
+            System.out.println("7. Create Course");
+            System.out.println("8. Enroll Student in Course");
+            System.out.println("9. List Students in Course");
+            System.out.println("10. Save & Exit");
+            System.out.print("Enter your choice: ");
+            choice = scanner.nextInt();
+            scanner.nextLine();  // Consume newline
+
+            switch (choice) {
+                case 1:
+                    addStudent(scanner);
+                    break;
+                case 2:
+                    removeStudent(scanner);
+                    break;
+                case 3:
+                    studentManager.listStudents();
+                    break;
+                case 4:
+                    updateStudentGrade(scanner);
+                    break;
+                case 5:
+                    studentManager.sortStudentsByGrade();
+                    studentManager.listStudents();
+                    break;
+                case 6:
+                    filterStudentsByAge(scanner);
+                    break;
+                case 7:
+                    createCourse(scanner);
+                    break;
+                case 8:
+                    enrollStudentInCourse(scanner);
+                    break;
+                case 9:
+                    listStudentsInCourse(scanner);
+                    break;
+                case 10:
+                    studentManager.saveStudentData();
+                    studentManager.saveCourseData();
+                    System.out.println("Data saved. Exiting...");
+                    break;
+                default:
+                    System.out.println("Invalid choice.");
+            }
+        } while (choice != 10);
+
+        scanner.close();
+    }
+
+    private static void addStudent(Scanner scanner) {
+        System.out.print("Enter student ID: ");
+        String id = scanner.nextLine();
+        System.out.print("Enter student name: ");
+        String name = scanner.nextLine();
+        System.out.print("Enter student age: ");
+        int age = scanner.nextInt();
+        System.out.print("Enter student grade: ");
+        double grade = scanner.nextDouble();
+        scanner.nextLine();  // Consume newline
+
+        Student student = new Student(id, name, age, grade);
+        studentManager.addStudent(student);
+        System.out.println("Student added.");
+    }
+
+    private static void removeStudent(Scanner scanner) {
+        System.out.print("Enter student ID to remove: ");
+        String id = scanner.nextLine();
+        studentManager.removeStudent(id);
+        System.out.println("Student removed.");
+    }
+
+    private static void updateStudentGrade(Scanner scanner) {
+        System.out.print("Enter student ID: ");
+        String id = scanner.nextLine();
+        System.out.print("Enter new grade: ");
+        double grade = scanner.nextDouble();
+        studentManager.updateGrade(id, grade);
+    }
+
+    private static void filterStudentsByAge(Scanner scanner) {
+        System.out.print("Enter minimum age: ");
+        int minAge = scanner.nextInt();
+        System.out.print("Enter maximum age: ");
+        int maxAge = scanner.nextInt();
+        studentManager.filterStudentsByAge(minAge, maxAge);
+    }
+
+    private static void createCourse(Scanner scanner) {
+        System.out.print("Enter course name: ");
+        String courseName = scanner.nextLine();
+        studentManager.createCourse(courseName);
+    }
+
+    private static void enrollStudentInCourse(Scanner scanner) {
+        System.out.print("Enter course name: ");
+        String courseName = scanner.nextLine();
+        System.out.print("Enter student ID: ");
+        String studentId = scanner.nextLine();
+        studentManager.enrollStudentInCourse(courseName, studentId);
+    }
+
+    private static void listStudentsInCourse(Scanner scanner) {
+        System.out.print("Enter course name: ");
+        String courseName = scanner.nextLine();
+        studentManager.listCourseStudents(courseName);
+    }
+}
